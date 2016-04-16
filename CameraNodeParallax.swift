@@ -12,7 +12,7 @@ import SpriteKit
  Gives you parallax backgrounds by moving your bgs by factor x,y in relation to your SKCameraNodes speed
  
  Usage:
- 1) Set your szene's self.camera to your CameraNodeParallax object and set its position
+ 1) Set your szene's self.camera to your CameraNodeParallax object
  2) Add your background(s) with addParallaxBackgroundNode()
     the second vector parameter defines the moving speed of your background in relation to the cameras speed (it gets multiplied with the cameras position difference once your camera changes its position)
    
@@ -22,7 +22,6 @@ import SpriteKit
         - not move at all: CGVectorMake(0,0)
         - move twice as fast as the camera on x-axes: CGVectorMake(2,0)
  
- 3) set your CameraNodeParallax objects positionInitialized = true
  */
 
 class CameraNodeParallax:SKCameraNode{
