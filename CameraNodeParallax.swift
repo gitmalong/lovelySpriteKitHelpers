@@ -27,15 +27,22 @@ import SpriteKit
 
 class CameraNodeParallax:SKCameraNode{
     
-    var positionInitialized = false
     var backgroundNodes:[SKNode] = []
     var backgroundNodesSpeedFactor:[CGVector] = [] // in relation to camera nodes speed
+    
+    init(position:CGPoint) {
+        super.init()
+        self.position = position
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override var position : CGPoint {
         didSet {
             
             // Move your parallax backgrounds
-            if positionInitialized == true {
                 var i = 0
                 for node in backgroundNodes {
                     
@@ -47,8 +54,6 @@ class CameraNodeParallax:SKCameraNode{
                     
                     i += 1
                 }
-            }
-  
         }
     }
     
