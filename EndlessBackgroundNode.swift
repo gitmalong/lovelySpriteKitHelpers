@@ -14,13 +14,17 @@ import SpriteKit
  Supports parallax backgrounds as well
  
  Usage:
- Works for this pattern
+ Designed for this kind of pattern
  GameScene  -> world            -> backgroundNodes -> place your EndlessBackground(s) here
-            -> platformNodes
-            -> control UI
-            -> camera
+                                -> e.g. platforms
+                                -> e.g. interactive sprites
+                                -> e.g. characters -> hero
+                                                   -> enemies
+            -> camera -> fixed stuff, e.g. control UI
+
  
- Just call triggerDraw() in your GameScenes didFinishUpdate()
+ Add your EndlessBackground object to your backgroundNodes or world and call its draw() method in your didMoveToView for initializing.
+ After that just call triggerDraw() in your GameScenes didFinishUpdate()
  and this class takes care of drawing and removing your background nodes
  
  */
@@ -83,8 +87,8 @@ public class EndlessBackground:SKNode {
     }
     
     func draw(position:CGPoint=CGPointZero) {
-        print("Draw background on point: ")
-        print(position)
+        // print("Draw background on point: ")
+        // print(position)
         
         let node = SKSpriteNode(texture: texture)
         node.position = position
@@ -92,31 +96,34 @@ public class EndlessBackground:SKNode {
         node.name = nodeName
         self.addChild(node)
         
+        /*
         print("texture width")
         print(texture.size().width)
         print("most right child node position x")
         print(getMostRightChildnode()?.position.x)
+        */
     }
     
     /* should be called from the scene didFinishUpdate method */
     func triggerDraw() {
 
-        print("camera")
-        print(camera.position.x)
+        //print("camera")
+        //print(camera.position.x)
 
         let mostRightChildNode = getMostRightChildnode()
         let mostRightChildNodeXEnd = mostRightChildNode!.position.x+texture.size().width
         
-        // Convert most right child position to camera parents (->szene) coordinate system
+        // Convert most left/right child position to camera parents (->szene) coordinate system
         // in order to support moving parallex backgrounds
         let mostRightChildNodePoint = CGPointMake(mostRightChildNodeXEnd,mostRightChildNode!.position.y)
         
         let mostRightChildNodeXInGameScene = self.convertPoint(mostRightChildNodePoint, toNode: camera.parent!).x
         let mostLeftChildNodeInGameScene = self.convertPoint(getMostLeftChildnode()!.position, toNode: camera.parent!).x
         
-        let cameraPlusSzeneSize = camera.position.x+drawNewBackgroundTriggerDistance
-        let cameraMinusSzeneSize = camera.position.x-drawNewBackgroundTriggerDistance
+        let cameraPlusTriggerDistance = camera.position.x+drawNewBackgroundTriggerDistance
+        let cameraMinusTriggerDistance = camera.position.x-drawNewBackgroundTriggerDistance
         
+        /*
         print("most right child node")
         print(mostRightChildNodeXEnd)
         
@@ -125,57 +132,60 @@ public class EndlessBackground:SKNode {
         
         print("camera plus szene size")
         print(cameraPlusSzeneSize)
+        */
 
-        if (cameraPlusSzeneSize > mostRightChildNodeXInGameScene) {
+        if (cameraPlusTriggerDistance > mostRightChildNodeXInGameScene) {
             if (self.children.count >= drawMaxNodes) {
                 cleanLeft()
             } else if (self.children.count < drawMaxNodes) {
-                print("draw right")
+                // print("draw right")
                 drawRight()
             }
         }
         
-        if (cameraMinusSzeneSize < mostLeftChildNodeInGameScene) {
+        if (cameraMinusTriggerDistance < mostLeftChildNodeInGameScene) {
             if (self.children.count >= drawMaxNodes) {
                 cleanRight()
             } else if (self.children.count < drawMaxNodes) {
-                print("draw left")
+                // print("draw left")
                 drawLeft()
             }
         }
     }
     
     private func cleanLeft() {
-        /* removes not visible nodes */
-            print("Remove most left background")
+        /* removes most right child node */
+            /* print("Remove most left background")
             print(drawMaxNodes)
             print(self.children.count)
             print("clean - mostLeftChildNode")
             print(getMostLeftChildnode())
-            var mostLeftNode = getMostLeftChildnode()?.removeFromParent()
-            
-            mostLeftNode = nil
+            */
+        
+            var mostRightChild = getMostLeftChildnode()
+            mostRightChild?.removeFromParent()
+            mostRightChild = nil
     }
     
     private func cleanRight() {
-        /* removes not visible nodes */
-            print("Remove most right background")
+        /* removes most left child node */
+            /*print("Remove most right background")
             print(drawMaxNodes)
-            print(self.children.count)
-            var mostRightChildNode = getMostRightChildnode()?.removeFromParent()
-            mostRightChildNode = nil
+            print(self.children.count)*/
+        
+            var mostLeftChild = getMostLeftChildnode()
+            mostLeftChild?.removeFromParent()
+            mostLeftChild = nil
     }
     
     private func drawLeft() {
-        print("drawLeft")
+        // print("drawLeft")
         draw(CGPointMake(getMostLeftChildnode()!.position.x-texture.size().width,firstNodePosition.y))
-       // cleanRight()
     }
     
     private func drawRight() {
-        print("drawRight")
+       // print("drawRight")
         draw(CGPointMake(getMostRightPositionX(),firstNodePosition.y))
-       // cleanLeft()
     }
     
 }
