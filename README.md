@@ -13,12 +13,12 @@ Supports parallax backgrounds as well
 Provides parallax background functionality by moving your backgrounds by factor x,y in relation to your SKCameraNodes speed
   
 ##EndlessParallaxBackgroundCamera.swift
-Subclass of SKCameraNode that triggers EndlessBackgroundNode & ParallaxBackgroundMover everytime when the cameras position is changed
+Subclass of SKCameraNode that triggers EndlessBackgroundNode & ParallaxBackgroundMover every time when the cameras position is changed
 
 ##SKWeaponSpriteNode.swift
 Implements a basic weapon with ammo, magazine, reload & rateOfFire time span and more
  
-You can pass hooks that can be triggered for certain events (i.e. to trigger sound effects)
+You can pass hooks for certain events (i.e. to play sound effects)
 
  - after the weapon fires
 
@@ -33,4 +33,4 @@ Adds "damagable" functionality to a SKNode
 
  - onDeath() is triggered when the node "dies"
 
- - Support for nodes that have children. Use it when all of them should be able to get damaged but the life points (of the parent node) should only be substracted once for each damaging event (i.e. when the hero's body parts are all children and both feets are contacted by the same fire)
+ - Support for nodes that have children. Use it when all of them should be able to get damaged but the life points (of the parent node) should only be subtracted once for each damaging event (i.e. when the hero's body parts are all children and both feets are contacted by the same fire)
