@@ -1,20 +1,21 @@
 # lovelySpriteKitHelpers
 
-classes that make the life with SpriteKit easier
+I’m creating a SpriteKit 2D platform game in Swift and want to share 
+my protocols/extensions/classes that make the life with SpriteKit easier. My focus is on keeping the code modular for easy reuse in other projects
 
-#EndlessBackgroundNode.swift
+##EndlessBackgroundNode.swift
 
-Node for an endless vertically scrolling background that duplicates your background depending on the SKCameraNode's position.
+Node for an endless vertically scrolling background that duplicates your background depending on the SKCameraNode's position and removes it after a certain distance again.
 Supports parallax backgrounds as well
 
-#ParallaxBackgroundMover.swift
+##ParallaxBackgroundMover.swift
 
-ParallaxBackgroundMover provides parallax background functionality by moving your backgrounds by factor x,y in relation to your SKCameraNodes speed
+Provides parallax background functionality by moving your backgrounds by factor x,y in relation to your SKCameraNodes speed
   
-#EndlessParallaxBackgroundCamera.swift
-This SKCameraNode subclass triggers EndlessBackgroundNode & ParallaxBackgroundMover everytime when the cameras position is changed
+##EndlessParallaxBackgroundCamera.swift
+Subclass of SKCameraNode that triggers EndlessBackgroundNode & ParallaxBackgroundMover everytime when the cameras position is changed
 
-#SKWeaponSpriteNode.swift
+##SKWeaponSpriteNode.swift
 Implements a basic weapon with ammo, magazine, reload & rateOfFire time span and more
  
 You can pass hooks that can be triggered for certain events (i.e. to trigger sound effects)
@@ -25,7 +26,7 @@ You can pass hooks that can be triggered for certain events (i.e. to trigger sou
 
  - after the weapon was reloaded
  
-#SKDamagableSpriteNode.swift
+##SKDamagableSpriteNode.swift
 Adds "damagable" functionality to a SKNode
  
  - Node gets life points that can be substracted
