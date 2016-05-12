@@ -34,6 +34,10 @@ Adds "damagable" functionality to a SKNode
  - onDeath() is triggered when the node "dies"
 
  - Support for nodes that have children. Use it when all of them should be able to get damaged but the life points (of the parent node) should only be subtracted once for each damaging event (i.e. when the hero's body parts are all children and both feets are contacted by the same fire)
+ - 
+ ###SKWeaponDamagableContactBridge.swift
+Manages the contact between objects that conform to type SKWeapon and SKDamagable
+ In other words: Applies damage and stops damage application between SKWeapon's and SKDamagable's based on the call of SpriteKits SKSzene didBeginContact() & didEndContact() methods
  
 ###SKDamageEvent.swift
  In SpriteKit you often like to trigger events based on collision or contact. Sometimes you want to prevent that a unique event gets triggered multiple times by SpriteKits physic engine. For example if your enemie's bullet hits your character you may want to apply the damage only once and not every time SpriteKit recognizes a contact or collision. This two classes/protocols help you to synchronize such events.
