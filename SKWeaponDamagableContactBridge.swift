@@ -12,7 +12,7 @@ import SpriteKit
  Created by gitmalong on 01.05.16.
  
  */
-class WeaponDamagableContactBridge {
+class SKWeaponDamagableContactBridge {
     
     /** creates an key that is unique for the relationship of one weapon and damagable key */
     static func createUniqueActionKey(weapon:SKWeapon, damagable:SKDamagable)->String {
