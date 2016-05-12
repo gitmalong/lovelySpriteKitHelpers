@@ -34,8 +34,8 @@ Adds "damagable" functionality to a SKNode
  - onDeath() is triggered when the node "dies"
 
  - Support for nodes that have children. Use it when all of them should be able to get damaged but the life points (of the parent node) should only be subtracted once for each damaging event (i.e. when the hero's body parts are all children and both feets are contacted by the same fire)
- - 
- ###SKWeaponDamagableContactBridge.swift
+
+###SKWeaponDamagableContactBridge.swift
 Manages the contact between objects that conform to type SKWeapon and SKDamagable
  In other words: Applies damage and stops damage application between SKWeapon's and SKDamagable's based on the call of SpriteKits SKSzene didBeginContact() & didEndContact() methods
  
