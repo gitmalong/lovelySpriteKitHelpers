@@ -12,7 +12,7 @@ Supports parallax backgrounds as well
 
 Provides parallax background functionality by moving your backgrounds by factor x,y in relation to your SKCameraNodes speed
   
-##EndlessParallaxBackgroundCamera.swift
+###EndlessParallaxBackgroundCamera.swift
 Subclass of SKCameraNode that triggers EndlessBackgroundNode & ParallaxBackgroundMover every time when the cameras position is changed
 
 ###SKWeaponSpriteNode.swift
