@@ -7,7 +7,7 @@
  
  Implements a basic weapon with ammo, magazine, fire and reload methods. 
  
- You can pass hooks that can be triggered for certain events (i.e. to trigger sound effects)
+ You can pass hooks that are triggered for certain events (i.e. to play sound effects)
  - after the weapon fires
  - after the weapon starts to reload
  - after the weapon was reloaded
@@ -26,21 +26,6 @@
 
 import Foundation
 import SpriteKit
-
-/*
-class Bullet {
-    var applied:Bool
-    var weapon:SKWeapon // weapon that fired that bullet
-    
-    init(weapon:SKWeapon) {
-        applied = false
-        self.weapon = weapon
-    }
-    
-    func getID() {
-        // return ObjectIdentifier(self)
-    }
-}*/
 
 /* Basic weapon protocol */
 protocol Weapon:class {
@@ -72,23 +57,39 @@ protocol Weapon:class {
     /// Set to true if weapon should be reloaded automatically when the magazine is empty, false if not
     var autoReload:Bool { get set }
     
-    func getRemainingShotsOfCurrentMagazine() -> Int
-    
+    /// Reloads weapon - Replaces ammoOfCurrentMagazine with magazineSize
     func reload()
-
+    
+    /// Reloads weapon, sets justReloading state, waits reloadTimeSeconds and calls hooks
     func reloadAndWait(afterReloadInit:(()->Void)?, afterReloadComplete:(()->Void)?) -> Void
     
+    /// Subtracts 1 from ammoOfCurrentMagazine
     func fire() -> Void
+    
+    /// Fires, sets justFiring to true and after rateOfFirePerSecond seconds to false, calls hook
     func fireAndWait(afterFired:(()->Void)?) -> Void
+    
+    /// return magazineSize > 0 && justReloading == false && justFiring == false
     func allowedToReload() -> Bool
+    
+    /// return justFiring == false && justReloading == false && ammoOfCurrentMagazine > 0
     func allowedToFire() -> Bool
     
+    /// Returns unique identifier for object instance
+    func getWeaponID() -> String
+    
+    /// Fires and reloads automatically when it is allowed
     func syncedFireAndReload(afterFired:(()->Void)?, afterReloadInit:(()->Void)?, afterReloadComplete:(()->Void)?)
+    
+    /// Fires when it is allowed
     func syncedFire(afterFired:(()->Void)?)
+    
+    /// Reloads when it is allowed
     func syncedReload(afterReloadInit:(()->Void)?, afterReloadComplete:(()->Void)?)
 }
 
-/* Default implementation for weapon protocol
+/**
+ Default implementation for weapon protocol
  
  Following methods have not been implemented cause the wait() methods
  should be system / framework specific:
@@ -96,10 +97,10 @@ protocol Weapon:class {
  syncedFireAndReload
  */
 extension Weapon {
-    
-    /// returns remaining shots of current magazine
-    func getRemainingShotsOfCurrentMagazine()->Int {
-        return ammoOfCurrentMagazine
+
+    /// Returns unique identifier for that weapon object
+    func getWeaponID()->String {
+        return String(ObjectIdentifier(self))
     }
     
     /// tells you if it is allowed to reload the weapon
@@ -110,7 +111,7 @@ extension Weapon {
     /// tells you if it is allowed to fire. depending if weapon is just firing or just reloading
     /// - Returns: Bool
     func allowedToFire()->Bool {
-        return justFiring == false && justReloading == false && getRemainingShotsOfCurrentMagazine() > 0
+        return justFiring == false && justReloading == false && ammoOfCurrentMagazine > 0
     }
     
     /// reloads the weapon. it discards current ammoOfCurrentMagazine and use a new magazine to refill it
@@ -120,25 +121,23 @@ extension Weapon {
         remainingMagazines = remainingMagazines-1
     }
     
-    /// Subtracts 1 from ammoOfCurrentMagazine. Does not do any safety checks if there is enough ammo or not!
+    /// Subtracts 1 from ammoOfCurrentMagazine. Does not include safety checks if there is enough ammo or not!
     func fire() {
         ammoOfCurrentMagazine = ammoOfCurrentMagazine-1
+        
+        // Produce "bullet" SKDamageEvent
+        // damageEvents.append(SKDamageEvent(damagePoints: damagePoints, weaponID: String(ObjectIdentifier(self))))
     }
     
     /// only fires and automatically reloads when it is allowed
     func syncedFireAndReload(afterFired:(()->Void)?, afterReloadInit:(()->Void)?, afterReloadComplete:(()->Void)?) {
         
-        print("syncedFireAndReload")
-        
         if allowedToFire() {
-            print("allowedToFire")
             fireAndWait(afterFired)
         } else if (ammoOfCurrentMagazine == 0) && allowedToReload() {
-            print("reloadAndWait")
             // Reload
             reloadAndWait(afterReloadInit, afterReloadComplete: afterReloadComplete)
         }
-        
     }
     
     /// Only fires when it is allowed to fire
@@ -162,7 +161,7 @@ protocol SKWeapon:Weapon{
 }
 
 /* Implements SpriteKit specific wait methods for weapon protocol */
-extension SKWeapon where Self:SKSpriteNode {
+extension SKWeapon where Self:SKNode {
     
     /// Fires and disallow fire for rateOfFirePerSecond seconds
     /// - Parameter afterFired: Optional block closure that is executed after the weapon fired
