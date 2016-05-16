@@ -14,11 +14,9 @@
  
  Usage in SpriteKit:
  
- 1) Create a subclass that inherits from SK(Sprite)Node and SKWeapon
+ 1) Create a an instance of a SKWeapon conform class (you may use SKWeaponGenerator)
  
- 2) Init ammoOfCurrentMagazine, rateOfFirePerSecond, magazineSize, remainingMagazines, reloadTimeSeconds and damagePoints in your subclass
- 
- 3) a) If you don't want to care a lot about when it should be allowed to fire (i.e. when the user touches your fire button) just call syncedFireAndReload(). It will try to fire everytime its possible and reloads automatically after a defined time span. Optionally you can pass hooks in form of blocks for the previously mentioned events
+ 2) a) If you don't want to care a lot about when it should be allowed to fire (i.e. when the user touches your fire button) just call syncedFireAndReload(). It will try to fire everytime its possible and reloads automatically after a defined time span. Optionally you can pass hooks in form of blocks for the previously mentioned events
  
     b) Create your own fire logic with help of the available methods and variables
 
@@ -33,13 +31,17 @@ protocol Weapon:class {
     /// Time that should be waited for before it is allowed to fire again
     var rateOfFirePerSecond:NSTimeInterval { get set }
     
-    /// Ammo of the current magazine
+    /** If set to true syncedFireAndReload() does not subtract any ammo and allowedToFire() returns true even if ammo is 0. As a result reload() is never called on syncedFireAndReload().
+     */
+    var infiniteAmmo:Bool { get set }
+    
+    /// Ammo of the current magazine, set to 0 when infiniteAmmo is true
     var ammoOfCurrentMagazine:Int { get set }
     
-    /// Ammo capacity of one magazine
+    /// Ammo capacity of one magazine, set to 0 when infiniteAmmo is true
     var magazineSize:Int { get set }
     
-    /// Remaining available magazines
+    /// Remaining available magazines, set to 0 when infiniteAmmo is true
     var remainingMagazines:Int { get set }
     
     /// Time it should take to reload the weapon
@@ -64,7 +66,10 @@ protocol Weapon:class {
     func reloadAndWait(afterReloadInit:(()->Void)?, afterReloadComplete:(()->Void)?) -> Void
     
     /// Subtracts 1 from ammoOfCurrentMagazine
-    func fire() -> Void
+    func subtractAmmo() -> Void
+    
+    /// Will only subtract ammo if infiniteAmmo == false
+    func syncedSubtractAmmo() -> Void
     
     /// Fires, sets justFiring to true and after rateOfFirePerSecond seconds to false, calls hook
     func fireAndWait(afterFired:(()->Void)?) -> Void
@@ -108,10 +113,10 @@ extension Weapon {
         return magazineSize > 0 && justReloading == false && justFiring == false
     }
     
-    /// tells you if it is allowed to fire. depending if weapon is just firing or just reloading
+    /// tells you if it is allowed to fire. depending if weapon is just firing or just reloading. If infiniteAmmo is true it will return true even if ammoOfCurrentMagazine is 0
     /// - Returns: Bool
     func allowedToFire()->Bool {
-        return justFiring == false && justReloading == false && ammoOfCurrentMagazine > 0
+        return justFiring == false && justReloading == false && (infiniteAmmo == true || ammoOfCurrentMagazine > 0)
     }
     
     /// reloads the weapon. it discards current ammoOfCurrentMagazine and use a new magazine to refill it
@@ -122,11 +127,15 @@ extension Weapon {
     }
     
     /// Subtracts 1 from ammoOfCurrentMagazine. Does not include safety checks if there is enough ammo or not!
-    func fire() {
+    func subtractAmmo() {
         ammoOfCurrentMagazine = ammoOfCurrentMagazine-1
-        
-        // Produce "bullet" SKDamageEvent
-        // damageEvents.append(SKDamageEvent(damagePoints: damagePoints, weaponID: String(ObjectIdentifier(self))))
+    }
+    
+    /// Subtracts ammo if infiniteAmmo is false
+    func syncedSubtractAmmo() {
+        if infiniteAmmo == false {
+            subtractAmmo()
+        }
     }
     
     /// only fires and automatically reloads when it is allowed
@@ -134,13 +143,13 @@ extension Weapon {
         
         if allowedToFire() {
             fireAndWait(afterFired)
-        } else if (ammoOfCurrentMagazine == 0) && allowedToReload() {
+        } else if (infiniteAmmo == false && ammoOfCurrentMagazine == 0) && allowedToReload() {
             // Reload
             reloadAndWait(afterReloadInit, afterReloadComplete: afterReloadComplete)
         }
     }
     
-    /// Only fires when it is allowed to fire
+    /// Fires when it is allowed to fire
     func syncedFire(afterFired:(()->Void)?) {
         if allowedToFire() {
             fireAndWait(afterFired)
@@ -157,11 +166,11 @@ extension Weapon {
 }
 
 protocol SKWeapon:Weapon{
-   
+   unowned var sknode:SKNode { get set }
 }
 
 /* Implements SpriteKit specific wait methods for weapon protocol */
-extension SKWeapon where Self:SKNode {
+extension SKWeapon {
     
     /// Fires and disallow fire for rateOfFirePerSecond seconds
     /// - Parameter afterFired: Optional block closure that is executed after the weapon fired
@@ -170,7 +179,7 @@ extension SKWeapon where Self:SKNode {
         
         justFiring = true
             
-        fire()
+        syncedSubtractAmmo()
         
         if let afhook = afterFired {
             afhook()
@@ -183,7 +192,7 @@ extension SKWeapon where Self:SKNode {
         }
             
         let waitSequenceAction = SKAction.sequence([rateOfFireWait, allowFireBlock])
-        self.runAction(waitSequenceAction)
+        sknode.runAction(waitSequenceAction)
     }
     
     
@@ -211,6 +220,60 @@ extension SKWeapon where Self:SKNode {
         }
         
         let waitAndAllowReloadSeq = SKAction.sequence([waitAction, allowReloadBlock])
-        self.runAction(waitAndAllowReloadSeq)
+        sknode.runAction(waitAndAllowReloadSeq)
     }
+}
+
+protocol hasSKWeapon {
+    var weapon:SKWeapon? { get set }
+}
+
+/// Inits class that conforms to SKWeapon
+class SKWeaponGenerator: SKWeapon {
+    
+    // SKWeapon
+    unowned var sknode:SKNode
+    
+    // Weapon
+    var infiniteAmmo: Bool
+    var ammoOfCurrentMagazine:Int
+    var magazineSize:Int
+    var remainingMagazines:Int
+    var rateOfFirePerSecond:NSTimeInterval
+    var reloadTimeSeconds:NSTimeInterval
+    var damagePoints:Int
+    var justFiring:Bool
+    var justReloading:Bool
+    var autoReload:Bool
+    
+    // Inits default weeapon
+    init(ammoOfCurrentMagazine:Int, magazineSize:Int, remainingMagazines:Int, rateOfFirePerSecond:NSTimeInterval, reloadTimeSeconds:NSTimeInterval, damagePoints:Int, autoReload:Bool, sknode:SKNode) {
+        self.infiniteAmmo = false
+        self.ammoOfCurrentMagazine = ammoOfCurrentMagazine
+        self.magazineSize = magazineSize
+        self.remainingMagazines = remainingMagazines
+        self.rateOfFirePerSecond = rateOfFirePerSecond
+        self.reloadTimeSeconds = reloadTimeSeconds
+        self.damagePoints = damagePoints
+        justFiring = false
+        justReloading = false
+        self.autoReload = autoReload
+        self.sknode = sknode
+    }
+    
+    /// Inits weapon with infinite ammo and that is never be reloaded
+    init(rateOfFirePerSecond:NSTimeInterval, damagePoints:Int, sknode:SKNode) {
+        self.infiniteAmmo = true
+        self.ammoOfCurrentMagazine = 0
+        self.magazineSize = 0
+        self.remainingMagazines = 0
+        self.rateOfFirePerSecond = rateOfFirePerSecond
+        self.reloadTimeSeconds = 0
+        self.damagePoints = damagePoints
+        justFiring = false
+        justReloading = false
+        self.autoReload = true
+        self.sknode = sknode
+    }
+    
 }
