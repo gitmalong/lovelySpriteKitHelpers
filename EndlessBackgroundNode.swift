@@ -5,7 +5,6 @@
 //
 //
 
-import Foundation
 import SpriteKit
 
 /*
@@ -16,12 +15,12 @@ import SpriteKit
  Usage:
  Designed for this kind of pattern
  GameScene  -> world            -> backgroundNodes -> place your EndlessBackground(s) here
-                                -> e.g. platforms
-                                -> e.g. interactive sprites
-                                -> e.g. characters -> hero
-                                                   -> enemies
-            -> camera -> fixed stuff, e.g. control UI
-
+ -> e.g. platforms
+ -> e.g. interactive sprites
+ -> e.g. characters -> hero
+ -> enemies
+ -> camera -> fixed stuff, e.g. control UI
+ 
  
  Add your EndlessBackground object to your backgroundNodes or world and call its draw() method in your didMoveToView for initializing.
  After that just call triggerDraw() in your GameScenes didFinishUpdate()
@@ -31,17 +30,17 @@ import SpriteKit
  */
 public class EndlessBackground:SKNode {
     
-    private let textureCache:SKTexture // your background as texture
+    /// Caches your background node
     private let node:SKSpriteNode
-    private var drawMaxNodes:Int // max number of background nodes
+    /// Max number of background nodes
+    private var drawMaxNodes:Int
     private let camera:SKCameraNode
-    private let distanceTrigger:CGFloat // New background is drawn when there is no bg at this value+camera.position.x
-
+    /// New background is drawn when there is no bg at this value+camera.position.x
+    private let distanceTrigger:CGFloat
+    
     init(yourBackgroundNode node:SKSpriteNode,camera:SKCameraNode, triggerDistance:CGFloat?=nil) {
         
         self.node = node
-        textureCache = (node.texture?.copy())! as! SKTexture
-        node.texture = textureCache
         self.camera = camera
         
         if let d = triggerDistance {
@@ -60,16 +59,13 @@ public class EndlessBackground:SKNode {
         super.init()
         
         self.position = node.position
+        self.zPosition = node.zPosition
+        self.name = node.name
     }
     
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    private func getMostRightPositionX()->CGFloat {
-        return getMostRightChildnode()!.position.x+node.size.width
-    }
-    
     
     private func getMostRightChildnode()->SKNode? {
         var mostRightNode:SKNode? = nil
@@ -95,71 +91,91 @@ public class EndlessBackground:SKNode {
         return mostLeftNode
     }
     
-    
     func initDraw() {
-        self.addChild(node.copy() as! SKSpriteNode)
+        self.addChild(node)
     }
     
-    func draw(position:CGPoint=CGPointZero) {
+    private func draw(position:CGPoint=CGPointZero) {
         // Copy Sprite Node and change its position
-        let nodeCopy = node.copy() as! SKSpriteNode
-        nodeCopy.position = position
-        self.addChild(nodeCopy)
+        // Texture of the copy will point to the same ressource -> Good
+        
+        if let _ = node.parent { // If cache node has parent we need a copy
+            let nodeCopy = node.copy() as! SKSpriteNode
+            nodeCopy.position = position
+            self.addChild(nodeCopy)
+        } else { // If cache node has no parent we use it
+            node.position = position
+            self.addChild(node)
+        }
+
     }
     
     /* should be called from the scene's didFinishUpdate or cameras position->didSet method */
     func triggerDraw() {
-
-        let mostRightChildNode = getMostRightChildnode()
-        let mostRightChildNodeXEnd = mostRightChildNode!.position.x+node.size.width
+        
+        let mostRightNode = getMostRightChildnode()
+        let mostRightNodeXEnd = mostRightNode!.position.x+node.size.width
         
         // Convert most left/right child position to camera parents (->szene) coordinate system
         // in order to support moving parallex backgrounds
-        let mostRightChildNodePoint = CGPointMake(mostRightChildNodeXEnd,mostRightChildNode!.position.y)
+        let mostRightNodeEndPoint = CGPointMake(mostRightNodeXEnd,mostRightNode!.position.y)
         
-        let mostRightChildNodeXInGameScene = self.convertPoint(mostRightChildNodePoint, toNode: camera.parent!).x
+        let mostRightNodeEndXInGameScene = self.convertPoint(mostRightNodeEndPoint, toNode: camera.parent!).x
         let mostLeftChildNodeXInGameScene = self.convertPoint(getMostLeftChildnode()!.position, toNode: camera.parent!).x
         
         let cameraPlusTriggerDistance = camera.position.x+distanceTrigger
         let cameraMinusTriggerDistance = camera.position.x-distanceTrigger
-
-        if (cameraPlusTriggerDistance > mostRightChildNodeXInGameScene) {
-            drawRight()
+        
+        if (cameraPlusTriggerDistance > mostRightNodeEndXInGameScene) {
             
-            if self.children.count > drawMaxNodes {
-               cleanLeft()
+            if children.count > drawMaxNodes {
+                // Instead of delete the old node we just move it
+                // removeMostLeftNode()
+                getMostLeftChildnode()!.position = getDrawRightPosition()
+            } else {
+                drawRight()
             }
+            
         }
         
         if (cameraMinusTriggerDistance < mostLeftChildNodeXInGameScene) {
-            drawLeft()
             
-            if self.children.count > drawMaxNodes {
-                cleanRight()
+            if children.count > drawMaxNodes {
+                // removeMostRightNode()
+                getMostRightChildnode()!.position = getDrawLeftPosition()
+
+            } else {
+                drawLeft()
             }
+
         }
     }
     
-    private func cleanLeft() {
-            var mostRightChild = getMostLeftChildnode()
-            mostRightChild?.removeFromParent()
-            mostRightChild = nil
+    /*
+    private func removeMostLeftNode() {
+        getMostLeftChildnode()?.removeFromParent()
     }
     
-    private func cleanRight() {
-            var mostLeftChild = getMostLeftChildnode()
-            mostLeftChild?.removeFromParent()
-            mostLeftChild = nil
+    private func removeMostRightNode() {
+        getMostRightChildnode()?.removeFromParent()
+        
+    }*/
+    
+    private func getDrawLeftPosition()->CGPoint {
+        return CGPointMake(getMostLeftChildnode()!.position.x-node.size.width,node.position.y)
+    }
+
+    
+    private func getDrawRightPosition()->CGPoint {
+        return CGPointMake(getMostRightChildnode()!.position.x+node.size.width,node.position.y)
     }
     
     private func drawLeft() {
-        // print("drawLeft")
-        draw(CGPointMake(getMostLeftChildnode()!.position.x-node.size.width,node.position.y))
+        draw(getDrawLeftPosition())
     }
     
     private func drawRight() {
-       // print("drawRight")
-        draw(CGPointMake(getMostRightPositionX(),node.position.y))
+        draw(getDrawRightPosition())
     }
     
 }
