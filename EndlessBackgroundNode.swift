@@ -113,15 +113,9 @@ public class EndlessBackground:SKNode {
     /* should be called from the scene's didFinishUpdate or cameras position->didSet method */
     func triggerDraw() {
         
-        let mostRightNode = getMostRightChildnode()
-        let mostRightNodeXEnd = mostRightNode!.position.x+node.size.width
-        
-        // Convert most left/right child position to camera parents (->szene) coordinate system
-        // in order to support moving parallex backgrounds
-        let mostRightNodeEndPoint = CGPointMake(mostRightNodeXEnd,mostRightNode!.position.y)
-        
-        let mostRightNodeEndXInGameScene = self.convertPoint(mostRightNodeEndPoint, toNode: camera.parent!).x
-        let mostLeftChildNodeXInGameScene = self.convertPoint(getMostLeftChildnode()!.position, toNode: camera.parent!).x
+        // Convert most left/right child position to camera parents (->szene) coordinate system in order to support moving parallex backgrounds
+        let mostRightNodeEndXInGameScene = convertPoint(getDrawRightPosition(), toNode: camera.parent!).x
+        let mostLeftChildNodeXInGameScene = convertPoint(getMostLeftChildnode()!.position, toNode: camera.parent!).x
         
         let cameraPlusTriggerDistance = camera.position.x+distanceTrigger
         let cameraMinusTriggerDistance = camera.position.x-distanceTrigger
@@ -129,8 +123,6 @@ public class EndlessBackground:SKNode {
         if (cameraPlusTriggerDistance > mostRightNodeEndXInGameScene) {
             
             if children.count > drawMaxNodes {
-                // Instead of delete the old node we just move it
-                // removeMostLeftNode()
                 getMostLeftChildnode()!.position = getDrawRightPosition()
             } else {
                 drawRight()
@@ -141,25 +133,13 @@ public class EndlessBackground:SKNode {
         if (cameraMinusTriggerDistance < mostLeftChildNodeXInGameScene) {
             
             if children.count > drawMaxNodes {
-                // removeMostRightNode()
                 getMostRightChildnode()!.position = getDrawLeftPosition()
-
             } else {
                 drawLeft()
             }
 
         }
     }
-    
-    /*
-    private func removeMostLeftNode() {
-        getMostLeftChildnode()?.removeFromParent()
-    }
-    
-    private func removeMostRightNode() {
-        getMostRightChildnode()?.removeFromParent()
-        
-    }*/
     
     private func getDrawLeftPosition()->CGPoint {
         return CGPointMake(getMostLeftChildnode()!.position.x-node.size.width,node.position.y)
